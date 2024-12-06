@@ -16,30 +16,26 @@ def generate_excel_download_link(df, filename="template.xlsx"):
 # Streamlit App
 st.header("Yahoo Finance Data Downloader")
 
-# Input for tickers
-input_tickers = st.text_input(
-    "Enter Yahoo Finance tickers of the assets (separated by commas):",
-    help="Example: AAPL, MSFT, TSLA"
+# Input for single ticker
+ticker = st.text_input(
+    "Enter a Yahoo Finance ticker:",
+    help="Example: AAPL"
 )
 
-if input_tickers:
-    # Parse and clean tickers
-    tickers = [ticker.strip().upper() for ticker in input_tickers.split(",")]
-
-    # Process each ticker individually
-    for ticker in tickers:
-        st.write(f"Fetching data for: {ticker}...")
-        try:
-            # Download maximum available historical data
-            data = yf.download(ticker, period="max")
-            data.reset_index(inplace=True)
-            data["Ticker"] = ticker  # Add a column for the ticker symbol
-            
-            # Display a preview of the data
-            st.write(f"Data for {ticker}:", data.head())
-            
-            # Generate download link with filename as the ticker
-            filename = f"{ticker}.xlsx"
-            generate_excel_download_link(data, filename=filename)
-        except Exception as e:
-            st.error(f"Failed to fetch data for {ticker}: {e}")
+if ticker:
+    ticker = ticker.strip().upper()  # Clean input
+    st.write(f"Fetching data for: {ticker}...")
+    try:
+        # Download maximum available historical data
+        data = yf.download(ticker, period="max")
+        data.reset_index(inplace=True)
+        
+        # Display the entire dataset
+        st.write(f"Data for {ticker}:")
+        st.dataframe(data)
+        
+        # Generate download link with filename as the ticker
+        filename = f"{ticker}.xlsx"
+        generate_excel_download_link(data, filename=filename)
+    except Exception as e:
+        st.error(f"Failed to fetch data for {ticker}: {e}")
