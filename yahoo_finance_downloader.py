@@ -1,9 +1,10 @@
 import pandas as pd
+from io import BytesIO
 import base64
-from io import StringIO, BytesIO
 import streamlit as st
+import yfinance as yf
 
-
+# Function to generate Excel download link (unchanged)
 def generate_excel_download_link(df):
     towrite = BytesIO()
     df.to_excel(towrite, index=False, header=True)
@@ -12,11 +13,37 @@ def generate_excel_download_link(df):
     href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="template.xlsx">Excel template'
     return st.markdown(href, unsafe_allow_html=True)
 
-st.header("Yahoo Finance Downloader")
+# Streamlit App
+st.header("Yahoo Finance Stock Price Downloader")
 
-tickers = []
-input_tickers = st.text_input("Enter the [Yahoo Finace](https://finance.yahoo.com) tickers of the assets you are interested in (seperated by comma). Make sure to select at least two.")
-# [link](https://share.streamlit.io/mesmith027/streamlit_webapps/main/MC_pi/streamlit_app.py)
+# Input for stock tickers
+input_tickers = st.text_input(
+    "Enter the Yahoo Finance tickers of the assets (separated by commas):",
+    help="Example: AAPL, MSFT, TSLA"
+)
+
 if input_tickers:
-    tickers  = input_tickers.split(",")
-    tickers = [x.strip() for x in tickers]
+    # Parse and clean tickers
+    tickers = [ticker.strip().upper() for ticker in input_tickers.split(",")]
+
+    # Fetch data
+    st.write(f"Fetching data for: {', '.join(tickers)}...")
+    dataframes = []
+    for ticker in tickers:
+        try:
+            data = yf.download(ticker, period="1y")  # Fetch data for the past year
+            data.reset_index(inplace=True)
+            data["Ticker"] = ticker  # Add a column for the ticker symbol
+            dataframes.append(data)
+        except Exception as e:
+            st.error(f"Failed to fetch data for {ticker}: {e}")
+
+    # Combine all data into a single DataFrame
+    if dataframes:
+        combined_df = pd.concat(dataframes, ignore_index=True)
+        st.write("Stock data preview:", combined_df.head())
+
+        # Generate download link using the provided function
+        generate_excel_download_link(combined_df)
+    else:
+        st.warning("No data to display or download.")
