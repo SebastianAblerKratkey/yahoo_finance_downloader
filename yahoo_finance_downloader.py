@@ -24,18 +24,21 @@ ticker = st.text_input(
 
 if ticker:
     ticker = ticker.strip().upper()  # Clean input
-    st.write(f"Fetching data for: {ticker}...")
+    st.write(f"Fetching price data for: {ticker}...")
     try:
         # Download maximum available historical data
         data = yf.download(ticker, period="max")
         data.reset_index(inplace=True)
         
-        # Display the entire dataset
-        st.write(f"Data for {ticker}:")
-        st.dataframe(data)
-        
-        # Generate download link with filename as the ticker
-        filename = f"{ticker}.xlsx"
-        generate_excel_download_link(data, filename=filename)
+        if data.empty:
+            st.error(f"Ticker '{ticker}' could not be found.")
+        else:
+            # Display the entire dataset
+            st.write(f"Price data for {ticker}:")
+            st.dataframe(data)
+            
+            # Generate download link with filename as the ticker
+            filename = f"{ticker}.xlsx"
+            generate_excel_download_link(data, filename=filename)
     except Exception as e:
-        st.error(f"Failed to fetch data for {ticker}: {e}")
+        st.error(f"An error occurred while fetching data for ticker '{ticker}': {e}")
